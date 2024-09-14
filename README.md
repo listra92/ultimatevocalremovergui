@@ -20,6 +20,9 @@ This is a tweaked fork of UVR v5.6.0 (beta with Roformers).
     - Manual Ensemble: Retains the original audio sample rate and can support both mono and stereo/multichannel files
     - Appends "𤋮" prefix instead of plain numbered one on every output file except the Manual Ensemble and other Audio Tools
 
+- **Known Issues:**
+    - The GUI for configuring params on newly added models is broken, you can instead try the working one in the official installation with the Roformer beta patch.
+
 - **Fork by makidanye**
     - [Donate](https://ko-fi.com/makidanye)
 
