@@ -370,10 +370,12 @@ SEMITONE_SEL = (-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11
 NOUT_SEL = (8, 16, 32, 48, 64)
 NOUT_LSTM_SEL = (64, 128)
 
-DEMUCS_OVERLAP = (0.25, 0.50, 0.75, 0.99)
-MDX_OVERLAP = (DEF_OPT, 0.25, 0.50, 0.75, 0.99)
+DEMUCS_OVERLAP = (0.25, 0.50, 0.75, 0.875, 0.99)
+MDX_OVERLAP = (DEF_OPT, 0.25, 0.50, 0.75, 0.875, 0.99)
 MDX23_OVERLAP = range(2, 51)
-VR_AGGRESSION = range(0, 51)
+VR_AGGRESSION = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 
+                 15, 20, 25, 30, 35, 40, 45, 50, 
+                 60, 70, 80, 90, 100)
 
 TIME_WINDOW_MAPPER = {
             "None": None,
@@ -633,6 +635,8 @@ DEFAULT_DATA = {
         'is_append_ensemble_name': False,
         'chosen_audio_tool': AUDIO_TOOL_OPTIONS[0],
         'choose_algorithm': MANUAL_ENSEMBLE_OPTIONS[0],
+        'nfiles': 'All',
+        'nth': '1',
         'time_stretch_rate': 2.0,
         'pitch_rate': 2.0,
         'is_time_correction': True,
@@ -748,6 +752,8 @@ SETTING_CHECK = ('vr_model',
                'is_append_ensemble_name',
                'chosen_audio_tool',
                'choose_algorithm',
+               'nfiles',
+               'nth',
                'time_stretch_rate',
                'pitch_rate',
                'is_time_correction',

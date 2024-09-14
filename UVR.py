@@ -47,7 +47,7 @@ from pathlib  import Path
 from separate import (
     SeperateDemucs, SeperateMDX, SeperateMDXC, SeperateVR,  # Model-related
     save_format, clear_gpu_cache,  # Utility functions
-    cuda_available, directml_available, mps_available
+    cuda_available, mps_available, #directml_available,
 )
 from playsound import playsound
 from typing import List
@@ -58,14 +58,14 @@ import yaml
 from ml_collections import ConfigDict
 from collections import Counter
 
-if not is_macos:
-    import torch_directml
+# if not is_macos:
+#     import torch_directml
 
-is_choose_arch = cuda_available and directml_available
-is_opencl_only = not cuda_available and directml_available
-is_cuda_only = cuda_available and not directml_available
+# is_choose_arch = cuda_available and directml_available
+# is_opencl_only = not cuda_available and directml_available
+# is_cuda_only = cuda_available and not directml_available
 
-is_gpu_available = cuda_available or directml_available or mps_available
+is_gpu_available = cuda_available or mps_available# or directml_available
 
 # Change the current working directory to the directory
 # this file sits in
@@ -361,7 +361,7 @@ class ModelData():
         self.is_denoise_model = True if root.denoise_option_var.get() == DENOISE_M and os.path.isfile(DENOISER_MODEL_PATH) else False
         self.is_gpu_conversion = 0 if root.is_gpu_conversion_var.get() else -1
         self.is_normalization = root.is_normalization_var.get()#
-        self.is_use_opencl = True if is_opencl_only else root.is_use_opencl_var.get()
+        self.is_use_opencl = False#True if is_opencl_only else root.is_use_opencl_var.get()
         self.is_primary_stem_only = root.is_primary_stem_only_var.get()
         self.is_secondary_stem_only = root.is_secondary_stem_only_var.get()
         self.is_denoise = True if not root.denoise_option_var.get() == DENOISE_NONE else False
@@ -1908,6 +1908,20 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
         self.choose_algorithm_Option = ComboBoxMenu(self.options_Frame, textvariable=self.choose_algorithm_var, values=MANUAL_ENSEMBLE_OPTIONS)
         self.choose_algorithm_Option_place = lambda:self.choose_algorithm_Option.place(x=MAIN_ROW_X[1], y=MAIN_ROW_Y[1], width=MAIN_ROW_WIDTH, height=OPTION_HEIGHT, relx=1/3, rely=3/self.COL1_ROWS, relwidth=1/3, relheight=1/self.COL2_ROWS)
         #self.help_hints(self.mdx_segment_size_Label, text=MDX_SEGMENT_SIZE_HELP)
+
+        # nfiles
+        self.nfiles_Label = self.main_window_LABEL_SET(self.options_Frame, 'N OF FILES')
+        self.nfiles_Label_place = lambda: self.nfiles_Label.place(x=TIME_WINDOW_LABEL_X, y=LABEL_Y, width=TIME_WINDOW_LABEL_WIDTH, height=LABEL_HEIGHT, relx=1/3, rely=7.37/self.COL1_ROWS, relwidth=1/3, relheight=1/self.COL2_ROWS)
+        self.nfiles_Option = ComboBoxMenu(self.options_Frame, textvariable=self.nfiles_var, values=('All', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16'))
+        self.nfiles_Option_place = lambda: self.nfiles_Option.place(x=SUB_ENT_ROW_X, y=ENTRY_Y, width=OPTION_WIDTH, height=OPTION_HEIGHT, relx=1/3, rely=8.37/self.COL1_ROWS, relwidth=1/3, relheight=1/self.COL2_ROWS)
+        #self.help_hints(self.nfiles_Label, text=("Process every n files"))
+        
+        # nth
+        self.nth_Label = self.main_window_LABEL_SET(self.options_Frame, 'NTH FILE NAME')
+        self.nth_Label_place = lambda: self.nth_Label.place(x=INTRO_ANALYSIS_LABEL_X, y=LABEL_Y, width=INTRO_ANALYSIS_LABEL_WIDTH, height=LABEL_HEIGHT, relx=2/3, rely=7.37/self.COL1_ROWS, relwidth=1/3, relheight=1/self.COL2_ROWS)
+        self.nth_Option = ComboBoxMenu(self.options_Frame, textvariable=self.nth_var, values=('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16'))
+        self.nth_Option_place = lambda: self.nth_Option.place(x=INTRO_ANALYSIS_OPTION_X, y=ENTRY_Y, width=OPTION_WIDTH, height=OPTION_HEIGHT, relx=2/3, rely=8.37/self.COL1_ROWS, relwidth=1/3, relheight=1/self.COL2_ROWS)
+        #self.help_hints(self.nth_Label, text=("Use n-th file name of each process as output"))
         
         
         # Time Stretch
@@ -2052,6 +2066,10 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
         self.chosen_audio_tool_Option,
         self.choose_algorithm_Label,
         self.choose_algorithm_Option,
+        self.nfiles_Label,
+        self.nfiles_Option,
+        self.nth_Label,
+        self.nth_Option,
         self.time_stretch_rate_Label,
         self.time_stretch_rate_Option,
         self.wav_type_set_Label,
@@ -2499,7 +2517,7 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
         is_good = False
         error_data = ''
         
-        if not type(audio_file) is tuple:
+        if (not type(audio_file) is tuple) and (not type(audio_file) is list):
             audio_file = [audio_file]
 
         for i in audio_file:
@@ -3196,18 +3214,18 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
             if cuda_available:
                 self.cuda_device_list = [f"{torch.cuda.get_device_properties(i).name}:{i}" for i in range(torch.cuda.device_count())]
                 self.cuda_device_list.insert(0, DEFAULT)
-                print(self.cuda_device_list)
+                #print(self.cuda_device_list)
             
-            if directml_available:
-                self.opencl_list = [f"{torch_directml.device_name(i)}:{i}" for i in range(torch_directml.device_count())]
-                self.opencl_list.insert(0, DEFAULT)
+            # if directml_available:
+            #     self.opencl_list = [f"{torch_directml.device_name(i)}:{i}" for i in range(torch_directml.device_count())]
+            #     self.opencl_list.insert(0, DEFAULT)
         except Exception as e:
             print(e)
             
-        if is_cuda_only:
-            self.is_use_opencl_var.set(False)
+        # if is_cuda_only:
+        #     self.is_use_opencl_var.set(False)
             
-        check_gpu_list = self.opencl_list if is_opencl_only or self.is_use_opencl_var.get() else self.cuda_device_list
+        check_gpu_list = self.cuda_device_list#self.opencl_list if is_opencl_only or self.is_use_opencl_var.get() else self.cuda_device_list
         if not self.device_set_var.get() in check_gpu_list:
             self.device_set_var.set(DEFAULT)
 
@@ -3358,11 +3376,11 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
         change_model_default_Button = ttk.Button(settings_menu_format_Frame, text=CHANGE_MODEL_DEFAULTS_TEXT, command=lambda:self.pop_up_change_model_defaults(settings_menu), width=SETTINGS_BUT_WIDTH-2)#
         change_model_default_Button.grid(pady=MENU_PADDING_4)
 
-        if not is_choose_arch:
-            self.vocal_splitter_Button_opt(settings_menu, settings_menu_format_Frame, width=SETTINGS_BUT_WIDTH-2, pady=MENU_PADDING_4)
+        #if not is_choose_arch:
+        self.vocal_splitter_Button_opt(settings_menu, settings_menu_format_Frame, width=SETTINGS_BUT_WIDTH-2, pady=MENU_PADDING_4)
 
         if not is_macos and self.is_gpu_available:
-            gpu_list_options = lambda:self.loop_gpu_list(device_set_Option, 'gpudevice', self.opencl_list if is_opencl_only or self.is_use_opencl_var.get() else self.cuda_device_list)
+            gpu_list_options = lambda:self.loop_gpu_list(device_set_Option, 'gpudevice', self.cuda_device_list)#self.opencl_list if is_opencl_only or self.is_use_opencl_var.get() else self.cuda_device_list)
             device_set_Label = self.menu_title_LABEL_SET(settings_menu_format_Frame, CUDA_NUM_TEXT)
             device_set_Label.grid(pady=MENU_PADDING_2)
             
@@ -3371,14 +3389,14 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
             gpu_list_options()
             self.help_hints(device_set_Label, text=IS_CUDA_SELECT_HELP)
             
-            if is_choose_arch:
-                is_use_opencl_Option = ttk.Checkbutton(settings_menu_format_Frame, 
-                                                       text=USE_OPENCL_TEXT, 
-                                                       width=9, 
-                                                       variable=self.is_use_opencl_var, 
-                                                       command=lambda:(gpu_list_options(), self.device_set_var.set(DEFAULT))) 
-                is_use_opencl_Option.grid()
-                self.help_hints(is_use_opencl_Option, text=IS_NORMALIZATION_HELP)
+            # if is_choose_arch:
+            #     is_use_opencl_Option = ttk.Checkbutton(settings_menu_format_Frame, 
+            #                                            text=USE_OPENCL_TEXT, 
+            #                                            width=9, 
+            #                                            variable=self.is_use_opencl_var, 
+            #                                            command=lambda:(gpu_list_options(), self.device_set_var.set(DEFAULT))) 
+            #     is_use_opencl_Option.grid()
+            #     self.help_hints(is_use_opencl_Option, text=IS_NORMALIZATION_HELP)
 
         model_sample_mode_Label = self.menu_title_LABEL_SET(settings_menu_format_Frame, MODEL_SAMPLE_MODE_SETTINGS_TEXT)
         model_sample_mode_Label.grid(pady=MENU_PADDING_2)
@@ -5771,6 +5789,10 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
             audio_tool_options = {
                 MANUAL_ENSEMBLE: [self.choose_algorithm_Label_place, 
                                   self.choose_algorithm_Option_place,
+                                  self.nfiles_Label_place,
+                                  self.nfiles_Option_place,
+                                  self.nth_Label_place,
+                                  self.nth_Option_place,
                                   self.is_wav_ensemble_Option_place],
                 TIME_STRETCH: [lambda: self.model_sample_mode_Option_place(rely=5), 
                                self.time_stretch_rate_Label_place, 
@@ -6268,10 +6290,11 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
         base = (100 / total_count)
         progress = base * self.iteration - base
         progress += base * step
+        progress_ = (progress / base - progress // base) * 100
 
         self.progress_bar_main_var.set(progress)
         
-        self.conversion_Button_Text_var.set(f'Process Progress: {int(progress)}%')
+        self.conversion_Button_Text_var.set(f'Process Progress: {int(progress*1000)/1000}% (Current: {int(progress_*1000)/1000}%)')
 
     def confirm_stop_process(self):
         """Asks for confirmation before halting active process"""
@@ -6323,7 +6346,7 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
 
         def get_audio_file_base(audio_file):
             if audio_tool.audio_tool == MANUAL_ENSEMBLE:
-                return f'{os.path.splitext(os.path.basename(inputPaths[0]))[0]}'
+                return f'{os.path.splitext(os.path.basename(audio_file[int(self.nth_var.get())-1]))[0]}'
             elif audio_tool.audio_tool in [ALIGN_INPUTS, MATCH_INPUTS]:
                 return f'{os.path.splitext(os.path.basename(audio_file[0]))[0]}'
             else:
@@ -6365,6 +6388,13 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
         self.process_check_wav_type()
         process_complete_text = PROCESS_COMPLETE
 
+        if self.chosen_audio_tool_var.get() == MANUAL_ENSEMBLE:
+            inputPaths = []
+            for i in range(len(self.inputPaths)):
+                if (i == 0) or (self.nfiles_var.get() != "All" and i % int(self.nfiles_var.get()) == 0):
+                    inputPaths.append([])
+                inputPaths[len(inputPaths)-1].append(self.inputPaths[i])
+
         if self.chosen_audio_tool_var.get() in [ALIGN_INPUTS, MATCH_INPUTS]:
             if self.DualBatch_inputPaths:
                 inputPaths = tuple(self.DualBatch_inputPaths)
@@ -6388,7 +6418,7 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
                 if self.chosen_audio_tool_var.get() == MANUAL_ENSEMBLE:
                     audio_tool = Ensembler(is_manual_ensemble=True)
                 multiple_files = True
-                if total_files <= 1:
+                if len(self.inputPaths) <= 1:
                     self.command_Text.write(NOT_ENOUGH_ERROR_TEXT)
                     self.process_end()
                     return
@@ -6407,7 +6437,8 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
                 set_progress_bar = lambda step, inference_iterations=0:self.process_update_progress(total_files=total_files, step=(step + (inference_iterations)))
 
                 if not self.verify_audio(audio_file):
-                    error_text_console = f'{self.base_text}"{os.path.basename(audio_file)}\" {MISSING_MESS_TEXT}\n'
+                    #error_text_console = f'{self.base_text}"{os.path.basename(audio_file)}\" {MISSING_MESS_TEXT}\n'
+                    error_text_console = f'sdasda\n'
                     if total_files >= 2:
                         self.command_Text.write(f'\n{error_text_console}')
                     is_verified_audio = False
@@ -6426,8 +6457,9 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
                         self.command_Text.write(f'{self.base_text}{text_write[0]} & {text_write[1]} {SIMILAR_TEXT}{NEW_LINES}')
                         continue
                 elif audio_tool_action == MANUAL_ENSEMBLE:
-                    for n, i in enumerate(inputPaths):
-                        self.command_Text.write(f'File {n+1} "{os.path.basename(i)}"{NEW_LINE}')
+                    self.command_Text.write(f'Ensemble {file_num}/{total_files}:\n')
+                    for n, i in enumerate(audio_file):
+                        self.command_Text.write(f' File {n+1} "{os.path.basename(i)}"{NEW_LINE}')
                     self.command_Text.write(NEW_LINE)
                     
                 is_verified_audio = True
@@ -6436,8 +6468,7 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
                     command_Text(PROCESS_STARTING_TEXT)
 
                 if audio_tool_action == MANUAL_ENSEMBLE:
-                    handle_ensemble(inputPaths, audio_file_base)
-                    break
+                    handle_ensemble(audio_file, audio_file_base)
                 if audio_tool_action in [ALIGN_INPUTS, MATCH_INPUTS]:
                     process_complete_text = PROCESS_COMPLETE_2
                     handle_alignment_match(audio_file, audio_file_base, command_Text, set_progress_bar)
@@ -6447,7 +6478,6 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
             if total_files == 1 and not is_verified_audio:
                 self.command_Text.write(f'{error_text_console}\n{PROCESS_FAILED}')
                 self.command_Text.write(time_elapsed())
-                playsound(FAIL_CHIME) if self.is_task_complete_var.get() else None
             else:
                 self.command_Text.write('{}{}'.format(process_complete_text, time_elapsed()))
                 playsound(COMPLETE_CHIME) if self.is_task_complete_var.get() else None
@@ -6455,11 +6485,8 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
             self.process_end()
 
         except Exception as e:
-            self.error_log_var.set(error_text(self.chosen_audio_tool_var.get(), e))
-            self.command_Text.write(f'\n\n{PROCESS_FAILED}')
-            self.command_Text.write(time_elapsed())
-            playsound(FAIL_CHIME) if self.is_task_complete_var.get() else None
-            self.process_end(error=e)
+            self.process_end()
+            #pass
 
     def process_determine_secondary_model(self, process_method, main_model_primary_stem, is_primary_stem_only=False, is_secondary_stem_only=False):
         """Obtains the correct secondary model data for conversion."""
@@ -6633,7 +6660,7 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
                     set_progress_bar = lambda step, inference_iterations=0:self.process_update_progress(total_files=inputPath_total_len, step=(step + (inference_iterations)))
                     write_to_console = lambda progress_text, base_text=base_text:self.command_Text.write(base_text + progress_text)
 
-                    audio_file_base = f"{file_num}_{os.path.splitext(os.path.basename(audio_file))[0]}"
+                    audio_file_base = f"\ufa6c{os.path.splitext(os.path.basename(audio_file))[0]}"
                     audio_file_base = audio_file_base if not self.is_testing_audio_var.get() or is_ensemble else f"{round(time.time())}_{audio_file_base}"
                     audio_file_base = audio_file_base if not is_ensemble else f"{audio_file_base}_{current_model.model_basename}"
                     if not is_ensemble:
@@ -6698,7 +6725,6 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
             if inputPath_total_len == 1 and not is_verified_audio:
                 self.command_Text.write(f'{error_text_console}\n{PROCESS_FAILED}')
                 self.command_Text.write(time_elapsed())
-                playsound(FAIL_CHIME) if self.is_task_complete_var.get() else None
             else:
                 set_progress_bar(1.0)
                 self.command_Text.write(PROCESS_COMPLETE)
@@ -6708,11 +6734,8 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
             self.process_end()
                         
         except Exception as e:
-            self.error_log_var.set("{}{}".format(error_text(self.chosen_process_method_var.get(), e), self.get_settings_list()))
-            self.command_Text.write(f'\n\n{PROCESS_FAILED}')
-            self.command_Text.write(time_elapsed())
-            playsound(FAIL_CHIME) if self.is_task_complete_var.get() else None
-            self.process_end(error=e)
+            self.process_end()
+            #pass
 
     #--Varible Methods--
 
@@ -6843,6 +6866,9 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
         #Audio Tool Vars
         self.chosen_audio_tool_var = tk.StringVar(value=data['chosen_audio_tool'])
         self.choose_algorithm_var = tk.StringVar(value=data['choose_algorithm'])
+        self.nfiles_var = tk.StringVar(value=data['nfiles'])
+        self.nth_var = tk.StringVar(value=data['nth'])
+        #print(self.nth_var.get())
         self.time_stretch_rate_var = tk.StringVar(value=data['time_stretch_rate'])
         self.pitch_rate_var = tk.StringVar(value=data['pitch_rate'])
         self.is_time_correction_var = tk.BooleanVar(value=data['is_time_correction'])
@@ -6864,7 +6890,7 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
         self.is_accept_any_input_var = tk.BooleanVar(value=data['is_accept_any_input'])
         self.is_task_complete_var = tk.BooleanVar(value=data['is_task_complete'])
         self.is_normalization_var = tk.BooleanVar(value=data['is_normalization'])#
-        self.is_use_opencl_var = tk.BooleanVar(value=True if is_opencl_only else data['is_use_opencl'])#
+        self.is_use_opencl_var = tk.BooleanVar(value=False)#True if is_opencl_only else data['is_use_opencl'])#
         self.is_wav_ensemble_var = tk.BooleanVar(value=data['is_wav_ensemble'])#
         self.is_create_model_folder_var = tk.BooleanVar(value=data['is_create_model_folder'])
         self.help_hints_var = tk.BooleanVar(value=data['help_hints_var'])
@@ -6982,6 +7008,8 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
             self.is_save_all_outputs_ensemble_var.set(loaded_setting['is_save_all_outputs_ensemble'])
             self.is_append_ensemble_name_var.set(loaded_setting['is_append_ensemble_name'])
             self.choose_algorithm_var.set(loaded_setting['choose_algorithm'])
+            self.nfiles_var.set(loaded_setting['nfiles'])
+            self.nth_var.set(loaded_setting['nth'])
             self.time_stretch_rate_var.set(loaded_setting['time_stretch_rate'])
             self.pitch_rate_var.set(loaded_setting['pitch_rate'])#
             self.is_time_correction_var.set(loaded_setting['is_time_correction'])#
@@ -7015,7 +7043,7 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
             
         self.is_gpu_conversion_var.set(loaded_setting['is_gpu_conversion'])
         self.is_normalization_var.set(loaded_setting['is_normalization'])#
-        self.is_use_opencl_var.set(True if is_opencl_only else loaded_setting['is_use_opencl'])#
+        self.is_use_opencl_var.set(False)#True if is_opencl_only else loaded_setting['is_use_opencl'])#
         self.is_wav_ensemble_var.set(loaded_setting['is_wav_ensemble'])#
         self.help_hints_var.set(loaded_setting['help_hints_var'])
         self.is_wav_ensemble_var.set(loaded_setting['is_wav_ensemble'])
@@ -7145,6 +7173,8 @@ class MainWindow(TkinterDnD.Tk if is_dnd_compatible else tk.Tk):
 
         other_data = {
             'chosen_process_method': self.chosen_process_method_var.get(),
+            'nfiles': self.nfiles_var.get(),
+            'nth': self.nth_var.get(),
             'input_paths': self.inputPaths,
             'lastDir': self.lastDir,
             'export_path': self.export_path_var.get(),

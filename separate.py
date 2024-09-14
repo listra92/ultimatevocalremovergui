@@ -38,8 +38,8 @@ import gc
 if TYPE_CHECKING:
     from UVR import ModelData
 
-if not is_macos:
-    import torch_directml
+#if not is_macos:
+#    import torch_directml
 
 mps_available = torch.backends.mps.is_available() if is_macos else False
 cuda_available = torch.cuda.is_available()
@@ -49,7 +49,7 @@ def get_gpu_info():
     directml_device, directml_available = DIRECTML_DEVICE, False
     
     if not is_macos:
-        directml_available = torch_directml.is_available()
+        #directml_available = torch_directml.is_available()
 
         if directml_available:
             directml_device = str(torch_directml.device()).partition(":")[0]

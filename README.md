@@ -4,6 +4,25 @@
 [![Release](https://img.shields.io/github/release/anjok07/ultimatevocalremovergui.svg)](https://github.com/anjok07/ultimatevocalremovergui/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/anjok07/ultimatevocalremovergui/total.svg)](https://github.com/anjok07/ultimatevocalremovergui/releases)
 
+## About This Fork
+
+This is a tweaked fork of UVR v5.6.0 (beta with Roformers).
+
+- **Installation:**
+    - Run install_packages.bat to install from requirements.txt (needs Python 3.9)
+    - Run the application through UVR.bat
+    - ffmpeg.exe and rubberband.exe not included here, please download them through the [Manual Windows Installation](https://github.com/listra92/ultimatevocalremovergui#manual-windows-installation) section
+
+- **Fork Tweaks:**
+    - Removed DirectML implementation to avoid errors, leaving only CPU and CUDA backend to work.
+    - Changes on combo box values of MDX & Demucs overlap and VR aggresion.
+    - Manual Ensemble: Ensemble every N files and whether to use n-th file as the output file name
+    - Manual Ensemble: Retains the original audio sample rate and can support both mono and stereo/multichannel files
+    - Appends "𤋮" prefix instead of plain numbered one on every output file except the Manual Ensemble and other Audio Tools
+
+- **Fork by makidanye**
+    - [Donate](https://ko-fi.com/makidanye)
+
 ## About
 
 This application uses state-of-the-art source separation models to remove vocals from audio files. UVR's core developers trained all of the models provided in this package (except for the Demucs v3 and v4 4-stem models).

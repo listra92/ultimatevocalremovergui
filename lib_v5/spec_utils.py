@@ -566,15 +566,19 @@ def ensemble_for_align(waves):
 def ensemble_inputs(audio_input, algorithm, is_normalization, wav_type_set, save_path, is_wave=False, is_array=False):
 
     wavs_ = []
+    is_mono = True
     
     if algorithm == AVERAGE:
-        output = average_audio(audio_input)
-        samplerate = 44100
+        output, samplerate, is_mono = average_audio(audio_input)
     else:
         specs = []
         
         for i in range(len(audio_input)):  
-            wave, samplerate = librosa.load(audio_input[i], mono=False, sr=44100)
+            wave, samplerate = librosa.load(audio_input[i], mono=False, sr=None)
+            if wave.ndim == 1:
+                wave = np.asfortranarray([wave,wave])
+            else:
+                is_mono = False
             wavs_.append(wave)
             spec = wave if is_wave else wave_to_spectrogram_no_mp(wave)
             specs.append(spec)
@@ -589,7 +593,10 @@ def ensemble_inputs(audio_input, algorithm, is_normalization, wav_type_set, save
             
         output = to_shape(output, target_shape.shape)
 
-    sf.write(save_path, normalize(output.T, is_normalization), samplerate, subtype=wav_type_set)
+    if is_mono:
+        sf.write(save_path, normalize(output[0], is_normalization), samplerate, subtype=wav_type_set)
+    else:
+        sf.write(save_path, normalize(output.T, is_normalization), samplerate, subtype=wav_type_set)
 
 def to_shape(x, target_shape):
     padding_list = []
@@ -755,11 +762,16 @@ def average_audio(audio):
     waves = []
     wave_shapes = []
     final_waves = []
-
+    is_mono = True
+    
     for i in range(len(audio)):
-        wave = librosa.load(audio[i], sr=44100, mono=False)
-        waves.append(wave[0])
-        wave_shapes.append(wave[0].shape[1])
+        wave, samplerate = librosa.load(audio[i], mono=False, sr=None)
+        if wave.ndim == 1:
+            wave = np.asfortranarray([wave,wave])
+        else:
+            is_mono = False
+        wave_shapes.append(wave.shape[1])
+        waves.append(wave)
 
     wave_shapes_index = wave_shapes.index(max(wave_shapes))
     target_shape = waves[wave_shapes_index]
@@ -773,7 +785,7 @@ def average_audio(audio):
     waves = sum(final_waves)
     waves = waves/len(audio)
 
-    return waves
+    return waves, samplerate, is_mono
     
 def average_dual_sources(wav_1, wav_2, value):
     
